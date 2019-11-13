@@ -1,0 +1,3 @@
+Cmnd_Alias LINUXER=/usr/bin/passwd, /usr/sbin/groupadd, /usr/sbin/userdel, /usr/sbin/useradd, /bin/mkdir, /bin/chown, /bin/chmod
+# User privilege specification
+linuxer ALL=(ALL) NOPASSWD: LINUXER

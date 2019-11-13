@@ -1,0 +1,37 @@
+客户端安装
+1、下载
+1、安装jupyter notebook
+由于jupyter在python2.7下有编码问题
+（UnicodeDecodeError: 'ascii' codec can't decode byte......）
+（python2默认采用ascii编码，而python3默认采用utf8编码）
+安装pip3，再安装jupyter
+1）安装pip3
+apt install python3-pip
+2）安装jupyter notebook
+pip3 install jupyter
+3）安装bash kernel
+pip3 install bash_kernel
+python3 -m bash_kernel.install
+
+2、在主服务器上安装，步骤为：
+1）增加注册帐号linuxer
+useradd -s /opt/linuxer/bin/server.bash linuxer
+2）设置密码为linux
+passwd linuxer
+3）设置linuxer帐号可创建帐号
+拷贝etc/sudoers.d/linuxer文件到/etc/sudoers.d/目录中，内容如下：
+# Cmnd alias specification
+Cmnd_Alias LINUXER=/usr/bin/passwd, /usr/sbin/groupadd, /usr/sbin/userdel, /usr/sbin/useradd, /bin/mkdir, /bin/chown, /bin/chmod
+# User privilege specification
+linuxer ALL=(ALL) NOPASSWD: LINUXER
+4）安装vsftpd
+apt install vsftpd
+systemctl enable vsftpd.service
+5) 添加/etc/shells
+/opt/linuxer/bin/server-students.bash
+/opt/linuxer/bin/server-teachers.bash
+6) 安装wput工具
+apt install wput
+
+3、安装linuxer服务器端软件
+cp * /opt/linuxer/

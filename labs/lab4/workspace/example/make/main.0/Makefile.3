@@ -1,0 +1,11 @@
+all: mainapp
+mainapp: main.o test1.o test2.o
+	gcc -o $@ $^
+main.o: main.c test1.h test2.h
+	gcc -c $<
+test1.o: test1.c test1.h
+	gcc -c $<
+test2.o: test2.c test2.h
+	gcc -c $<
+clean:
+	rm mainapp main.o test1.o test2.o 2>/dev/null

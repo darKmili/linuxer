@@ -1,0 +1,35 @@
+#!/bin/bash
+
+start()
+{
+  test -z "$1" || opt="--notebook-dir=$1"
+
+  jupyter notebook --allow-root "$opt"
+}
+
+server()
+{
+  if [ -z "$1" ]
+    then
+      su linuxer
+    else
+      ssh "linuxer@$1"
+  fi
+}
+
+submit()
+{
+  read -p "Input your ID:" ID
+  ID=${ID:-root}
+
+  test -d labs/ ||(echo "No Experiments.";exit)
+
+  if [ -z "$1" ]
+    then
+      sudo -u $ID cp -rf labs/ /home/"$ID"/
+    else
+      read -s -p "Password:" PASSWORD
+      wput labs/ ftp://"$ID":"$PASSWORD"@"$1"
+  fi
+}
+

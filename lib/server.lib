@@ -1,0 +1,89 @@
+#!/bin/bash
+
+register()
+{
+  RETURN=1
+
+  sudo groupadd $STUDENT_GROUP > /dev/null 2>&1 #make sure group is created before
+
+  while [ $RETURN != 0 ]
+    do
+      echo "Input your student ID as your account [ 0 means quit ]:"
+      read ID
+    if [ ${ID:-0} == 0 ]; then
+      exit
+    fi
+
+    if [[ ! $ID =~ $STUDENT_PATTERN ]] || [ ${#ID} != ${#STUDENT_ID} ]; then
+      echo "The account you chosen is invalid, please try again!"
+      continue
+    fi
+
+    grep $ID /etc/passwd > /dev/null 2>&1
+    if [ $? == 0 ]; then
+      echo "The ID you input have already been created, please contact the teacher!"
+      read
+      exit
+    fi
+    sudo useradd -s /opt/linuxer/bin/server-students.bash -g $STUDENT_GROUP -m $ID > /dev/null 2>&1
+    RETURN=$?
+    if [ $RETURN != 0 ]; then
+      echo "The account you chosen cannot been created, please contact your
+      administrator!"
+      exit
+    fi
+  done
+
+  trap "userdel -r $ID; trap - SIGINT SIGTERM; stty echo; exit" SIGINT SIGTERM
+  echo "Set password for your account:"
+  if ! sudo passwd $ID
+    then
+      sudo userdel -r $ID
+  fi
+
+  clear
+  echo
+  echo
+  echo
+  echo "===================================================="
+  echo "Congratulation! Your account $ID is setup. "
+  echo "Please login again using your account $ID. "
+  echo "===================================================="
+  read
+
+}
+
+
+# adapted from 唐欣（信安1405班，5120144789）and
+# 曾林生（信安1405班，5120142898） 
+# 2016/12/07
+score()
+{
+
+PWD=`pwd`
+EXP=${PWD##*/}
+
+LABDIRFULL=${SUBMIT_DIR}/${USER}/${EXP}
+DIRFULL=$SCORE_DIR/$EXP
+if [ ! -f $DIRFULL ]
+  then
+    dialog --title "Score: $EXP" --backtitle "Score-->Result" --clear --msgbox "The experient not start checking yet." 8 40
+    return 1
+fi
+if [ -f $DIRFULL ]
+  then
+    score=`cat $DIRFULL | grep "^${USER}" | while IFS="," read v1 v2 v3 v4
+    do
+      echo "Score: $v2\n"
+      echo "Marker: $v3\n" 
+      echo "Date: $v4\n"
+    done`
+    if [ ! -z "$score" ]
+      then
+	cp -rf "${LABDIRFULL}" "${PWD}/"
+        dialog --title "Score: $EXP" --backtitle "Score-->Result" --clear --msgbox "$score\n Visit directory ${EXP}/ to see the comments." 10 50
+      else
+        dialog --title "Score: $EXP" --backtitle "Score-->Result" --clear --msgbox "Your score has been not checked.Please wait." 8 40
+    fi
+fi
+}
