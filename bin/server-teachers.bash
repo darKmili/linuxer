@@ -11,7 +11,7 @@ echo "Teacher functions."
 echo "MENU"
 echo "  1 Change passwd"
 echo "  2 List scores"
-echo "  3 Mark reports(TODO)"
+echo "  3 Mark reports"
 echo "  4 Analyze experiments(TODO)"
 echo "  5 System admin(TODO)" 
 echo "  0 Return"
@@ -23,7 +23,7 @@ read CHOICE
 case $CHOICE in
   1) passwd;;
   2) listscore;;
-  3) todo mark;;
+  3) mark;;
   4) todo analyze;;
   5) todo admin;;
   *) CHOICE=0

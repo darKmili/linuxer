@@ -114,3 +114,124 @@ listscore()
       fi
     done
 }
+
+# helper: search student's score
+# printscore scorefile ID
+printscore()
+{
+  if [ ! -z $1 -a -f $1 ]
+   then
+     SCORE=
+     readscore $1 $2
+     if [ ! -z "${SCORE}" ]
+       then
+         echo \($SCORE\)
+     fi
+  fi
+}
+
+# helper
+# readscore ID scorefile
+readscore()
+{
+  if [ ! -z $1 -a -f $1 ]
+    then
+     SCORE=$(grep ^$2 $1)
+  fi
+}
+
+# helper
+# startExp dir
+startExp()
+{
+  test -z "$1" || opt="--notebook-dir=$1"
+  jupyter notebook --allow-root "$opt" 
+}
+
+# for teacher
+mark()
+{
+  # read lab for checking
+  read -p "Input lab NUMBER for marking(1,2,3,...,etc.):" LAB
+
+  test -z $LAB && exit 1
+  # print list of students
+  INDEX=1
+  SCOREFILE=${SCORE_DIR}/lab${LAB}
+
+  test -d "${SCORE_DIR}" || sudo mkdir ${SCORE_DIR}
+  test -f ${SCOREFILE} || sudo touch ${SCOREFILE}
+  
+  for DIR in ${SUBMIT_DIR}/*
+    do
+      if [ -d ${DIR}/labs/lab${LAB} ]
+        then
+          SCORE=
+          echo -n "$INDEX  "
+          readscore $SCOREFILE ${DIR##*/}
+          if [ ! -z "${SCORE}" ]
+            then
+              echo $SCORE
+            else
+              echo "${DIR##*/}"
+            fi
+          INDEX=$(($INDEX+1))
+        fi
+    done
+  
+  SCORE=
+
+  # read start ID for checking
+  read -p "Input start student ID for checking:" ID
+
+  test -z $ID && exit 1
+  # create exp and mount every student's submition
+  START=1
+  for DIR in ${SUBMIT_DIR}/*
+    do
+      if [ ! ${START} == 0 ]
+        then
+          if [ ${DIR##*/} == $ID ]
+            then
+              START=0
+          fi
+      fi
+      if [ ${START} == 0 ]
+        then
+          if [ -d ${DIR}/labs/lab${LAB} ]
+            then
+              echo "=============Checking student ${DIR##*/} ==============="
+
+              echo "Openning experiment environment, please wait ......"
+              startExp ${DIR}/labs/lab${LAB} ${DIR##*/}
+
+              # print score
+              printscore $SCOREFILE ${DIR##*/}
+              read -p "Mark this experiment (enter:skip, q:quit, i:input id): " INPUT
+              if [ ! -z $INPUT ]
+                then
+                  if [ ! $INPUT = "q" -a ! $INPUT = "Q" ]
+                    then
+                      if [ ! $INPUT = "i" -a ! $INPUT = "I" ]
+                        then
+                          if grep -i ^${DIR##*/} ${SCOREFILE} >/dev/null 2>&1
+                            then
+                              echo "Marked, ignored"
+                            else
+                              sudo bash -c "echo ${DIR##*/},$INPUT,${USER},$(date) >> $SCOREFILE"
+                          fi
+                        else
+                          # read start ID for checking
+                          read -p "Input start student ID for checking:" ID
+                          test -z $ID && break
+                          # create exp and mount every student's submition
+                          START=1
+                      fi
+                    else
+                      break
+                  fi
+              fi
+          fi
+      fi
+    done
+}
