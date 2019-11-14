@@ -22,7 +22,7 @@ read CHOICE
 
 case $CHOICE in
   1) passwd;;
-  2) todo listscore;;
+  2) listscore;;
   3) todo mark;;
   4) todo analyze;;
   5) todo admin;;

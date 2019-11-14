@@ -13,8 +13,7 @@ register()
 
   while [ $RETURN != 0 ]
     do
-      echo "Input your student ID as your account [ 0 means quit ]:"
-      read ID
+      read -p "Your student ID (e.x. $STUDENT_ID)[ 0 means quit ]:" ID
     if [ ${ID:-0} == 0 ]; then
       exit
     fi
@@ -64,31 +63,33 @@ register()
 # 2016/12/07
 checkscore()
 {
+  SCORES=`ls ${SCORE_DIR}`
 
-  PWD=`pwd`
-  EXP=${PWD##*/}
+  if [ ! -z "$SCORES" ]
+    then
+      echo $SCORES
+      read -p "Input name of experiment:" LAB
+    fi
+  LAB=${LAB##*/}
+  DIRFULL="$SCORE_DIR/$LAB"
 
-  LABDIRFULL=${SUBMIT_DIR}/${USER}/${EXP}
-  DIRFULL=$SCORE_DIR/$EXP
   if [ ! -f $DIRFULL ]
     then
-      dialog --title "Score: $EXP" --backtitle "Score-->Result" --clear --msgbox "The experient not start checking yet." 8 40
+      read -p "The experient is not marked yet."
       return 1
-  fi
-  if [ -f $DIRFULL ]
-    then
+    else 
       score=`cat $DIRFULL | grep "^${USER}" | while IFS="," read v1 v2 v3 v4
       do
-        echo "Score: $v2\n"
-        echo "Marker: $v3\n" 
-        echo "Date: $v4\n"
+        echo "ID: $v1"
+        echo "Score: $v2"
+        echo "Marker: $v3" 
+        echo "Date: $v4"
       done`
       if [ ! -z "$score" ]
         then
-	      cp -rf "${LABDIRFULL}" "${PWD}/"
-          dialog --title "Score: $EXP" --backtitle "Score-->Result" --clear --msgbox "$score\n Visit directory ${EXP}/ to see the comments." 10 50
+          read -p "$score"
         else
-          dialog --title "Score: $EXP" --backtitle "Score-->Result" --clear --msgbox "Your score has been not checked.Please wait." 8 40
+          read -p "Your score has been not checked.Please wait."
       fi
   fi
 }
@@ -96,5 +97,20 @@ checkscore()
 # for teacher
 listscore()
 {
-#  todo listscore
+  SCORES=`ls ${SCORE_DIR}`
+
+  LAB=1
+  while [ ! -z "$SCORES" -a "$LAB" != 0 ]
+    do
+      echo $SCORES
+      read -p "Input name of experiment:(0: quit)" LAB
+      
+      LAB=${LAB##*/}
+      DIRFULL="$SCORE_DIR/$LAB"
+
+      if [ -f $DIRFULL ]
+        then
+         cat $DIRFULL | sed -re 's/,/\t|/g;' | column -t | less 
+      fi
+    done
 }
