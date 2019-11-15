@@ -68,7 +68,7 @@ checkscore()
   if [ ! -z "$SCORES" ]
     then
       echo $SCORES
-      read -p "Input name of experiment:" LAB
+      read -p "Input NAME of experiment:" LAB
     fi
   LAB=${LAB##*/}
   DIRFULL="$SCORE_DIR/$LAB"
@@ -100,10 +100,10 @@ listscore()
   SCORES=`ls ${SCORE_DIR}`
 
   LAB=1
-  while [ ! -z "$SCORES" -a "$LAB" != 0 ]
+  while [ ! -z "$SCORES" -a "$LAB" != 0 -a ! -z "$LAB" ]
     do
       echo $SCORES
-      read -p "Input name of experiment:(0: quit)" LAB
+      read -p "Input NAME of experiment(0 quit):" LAB
       
       LAB=${LAB##*/}
       DIRFULL="$SCORE_DIR/$LAB"
@@ -151,87 +151,100 @@ startExp()
 # for teacher
 mark()
 {
+  # chmod submit files for mark
+  for i in ${SUBMIT_DIR}/*
+    do
+      if [[ ${i##*/} =~ $STUDENT_PATTERN ]]
+        then
+          sudo chmod a+rx -R ${i}
+        fi
+    done
   # read lab for checking
   read -p "Input lab NUMBER for marking(1,2,3,...,etc.):" LAB
 
-  test -z $LAB && exit 1
-  # print list of students
-  INDEX=1
-  SCOREFILE=${SCORE_DIR}/lab${LAB}
+  if [ ! -z $LAB ]
+  then
 
-  test -d "${SCORE_DIR}" || sudo mkdir ${SCORE_DIR}
-  test -f ${SCOREFILE} || sudo touch ${SCOREFILE}
+    # print list of students
+    INDEX=1
+    SCOREFILE=${SCORE_DIR}/lab${LAB}
+
+    test -d "${SCORE_DIR}" || sudo mkdir ${SCORE_DIR}
+    test -f ${SCOREFILE} || sudo touch ${SCOREFILE}
   
-  for DIR in ${SUBMIT_DIR}/*
+    for DIR in ${SUBMIT_DIR}/*
     do
-      if [ -d ${DIR}/labs/lab${LAB} ]
+      if [[ ${DIR##*/} =~ $STUDENT_PATTERN ]] && [ -d ${DIR}/labs/lab${LAB} ]
+      then
+        SCORE=
+        echo -n "$INDEX  "
+        readscore $SCOREFILE ${DIR##*/}
+        if [ ! -z "${SCORE}" ]
         then
-          SCORE=
-          echo -n "$INDEX  "
-          readscore $SCOREFILE ${DIR##*/}
-          if [ ! -z "${SCORE}" ]
-            then
-              echo $SCORE
-            else
-              echo "${DIR##*/}"
-            fi
-          INDEX=$(($INDEX+1))
+          echo $SCORE
+        else
+          echo "${DIR##*/}"
         fi
+        INDEX=$(($INDEX+1))
+      fi
     done
   
-  SCORE=
+    SCORE=
 
-  # read start ID for checking
-  read -p "Input start student ID for checking:" ID
+    # read start ID for checking
+    read -p "Input start student ID for checking:" ID
 
-  test -z $ID && exit 1
-  # create exp and mount every student's submition
-  START=1
-  for DIR in ${SUBMIT_DIR}/*
-    do
-      if [ ! ${START} == 0 ]
+    if [ ! -z $ID ]
+    then
+    # create exp and mount every student's submition
+      START=1
+      for DIR in ${SUBMIT_DIR}/*
+      do
+        if [ ! ${START} == 0 ]
         then
           if [ ${DIR##*/} == $ID ]
-            then
-              START=0
+          then
+            START=0
           fi
-      fi
-      if [ ${START} == 0 ]
+        fi
+        if [ ${START} == 0 ]
         then
           if [ -d ${DIR}/labs/lab${LAB} ]
+          then
+            echo "=============Checking student ${DIR##*/} ==============="
+
+            echo "Openning experiment environment, please wait ......"
+            startExp ${DIR}/labs/lab${LAB} ${DIR##*/}
+
+            # print score
+            printscore $SCOREFILE ${DIR##*/}
+            read -p "Mark ${DIR##*/} (enter:skip, q:quit, i:input id): " INPUT
+            if [ ! -z $INPUT ]
             then
-              echo "=============Checking student ${DIR##*/} ==============="
-
-              echo "Openning experiment environment, please wait ......"
-              startExp ${DIR}/labs/lab${LAB} ${DIR##*/}
-
-              # print score
-              printscore $SCOREFILE ${DIR##*/}
-              read -p "Mark this experiment (enter:skip, q:quit, i:input id): " INPUT
-              if [ ! -z $INPUT ]
+              if [ ! $INPUT = "q" -a ! $INPUT = "Q" ]
+              then
+                if [ ! $INPUT = "i" -a ! $INPUT = "I" ]
                 then
-                  if [ ! $INPUT = "q" -a ! $INPUT = "Q" ]
-                    then
-                      if [ ! $INPUT = "i" -a ! $INPUT = "I" ]
-                        then
-                          if grep -i ^${DIR##*/} ${SCOREFILE} >/dev/null 2>&1
-                            then
-                              echo "Marked, ignored"
-                            else
-                              sudo bash -c "echo ${DIR##*/},$INPUT,${USER},$(date) >> $SCOREFILE"
-                          fi
-                        else
-                          # read start ID for checking
-                          read -p "Input start student ID for checking:" ID
-                          test -z $ID && break
-                          # create exp and mount every student's submition
-                          START=1
-                      fi
-                    else
-                      break
+                  if grep -i ^${DIR##*/} ${SCOREFILE} >/dev/null 2>&1
+                  then
+                    echo "Marked, ignored"
+                  else
+                    sudo bash -c "echo ${DIR##*/},$INPUT,${USER},$(date) >> $SCOREFILE"
                   fi
+                else
+                  # read start ID for checking
+                  read -p "Input start student ID for checking:" ID
+                  test -z $ID && break
+                  # create exp and mount every student's submition
+                  START=1
+                fi
+              else
+                break
               fi
+            fi
           fi
-      fi
-    done
+        fi
+      done
+    fi
+  fi
 }
