@@ -30,6 +30,7 @@ linuxer ALL=(ALL) NOPASSWD: LINUXER
 apt install vsftpd
 systemctl enable vsftpd.service
 5) 添加/etc/shells
+/opt/linuxer/bin/server.bash
 /opt/linuxer/bin/server-students.bash
 /opt/linuxer/bin/server-teachers.bash
 6) 安装wput工具
