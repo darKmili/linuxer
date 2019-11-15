@@ -29,7 +29,7 @@ submit()
       sudo -u $ID cp -rf labs/ /home/"$ID"/
     else
       read -s -p "Password:" PASSWORD
-      wput labs/ ftp://"$ID":"$PASSWORD"@"$1"
+      wput labs/* ftp://"$ID":"$PASSWORD"@"$1"
   fi
 }
 

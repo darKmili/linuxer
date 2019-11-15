@@ -1,5 +1,10 @@
 #!/bin/bash
 
+todo()
+{
+  echo "TODO: Function $1"
+}
+
 register()
 {
   RETURN=1
@@ -8,8 +13,7 @@ register()
 
   while [ $RETURN != 0 ]
     do
-      echo "Input your student ID as your account [ 0 means quit ]:"
-      read ID
+      read -p "Your student ID (e.x. $STUDENT_ID)[ 0 means quit ]:" ID
     if [ ${ID:-0} == 0 ]; then
       exit
     fi
@@ -57,33 +61,190 @@ register()
 # adapted from 唐欣（信安1405班，5120144789）and
 # 曾林生（信安1405班，5120142898） 
 # 2016/12/07
-score()
+checkscore()
 {
+  SCORES=`ls ${SCORE_DIR}`
 
-PWD=`pwd`
-EXP=${PWD##*/}
-
-LABDIRFULL=${SUBMIT_DIR}/${USER}/${EXP}
-DIRFULL=$SCORE_DIR/$EXP
-if [ ! -f $DIRFULL ]
-  then
-    dialog --title "Score: $EXP" --backtitle "Score-->Result" --clear --msgbox "The experient not start checking yet." 8 40
-    return 1
-fi
-if [ -f $DIRFULL ]
-  then
-    score=`cat $DIRFULL | grep "^${USER}" | while IFS="," read v1 v2 v3 v4
-    do
-      echo "Score: $v2\n"
-      echo "Marker: $v3\n" 
-      echo "Date: $v4\n"
-    done`
-    if [ ! -z "$score" ]
-      then
-	cp -rf "${LABDIRFULL}" "${PWD}/"
-        dialog --title "Score: $EXP" --backtitle "Score-->Result" --clear --msgbox "$score\n Visit directory ${EXP}/ to see the comments." 10 50
-      else
-        dialog --title "Score: $EXP" --backtitle "Score-->Result" --clear --msgbox "Your score has been not checked.Please wait." 8 40
+  if [ ! -z "$SCORES" ]
+    then
+      echo $SCORES
+      read -p "Input NAME of experiment:" LAB
     fi
-fi
+  LAB=${LAB##*/}
+  DIRFULL="$SCORE_DIR/$LAB"
+
+  if [ ! -f $DIRFULL ]
+    then
+      read -p "The experient is not marked yet."
+      return 1
+    else 
+      score=`cat $DIRFULL | grep "^${USER}" | while IFS="," read v1 v2 v3 v4
+      do
+        echo "ID: $v1"
+        echo "Score: $v2"
+        echo "Marker: $v3" 
+        echo "Date: $v4"
+      done`
+      if [ ! -z "$score" ]
+        then
+          read -p "$score"
+        else
+          read -p "Your score has not been checked.Please wait."
+      fi
+  fi
+}
+
+# for teacher
+listscore()
+{
+  SCORES=`ls ${SCORE_DIR}`
+
+  LAB=1
+  while [ ! -z "$SCORES" -a "$LAB" != 0 -a ! -z "$LAB" ]
+    do
+      echo $SCORES
+      read -p "Input NAME of experiment(0 quit):" LAB
+      
+      LAB=${LAB##*/}
+      DIRFULL="$SCORE_DIR/$LAB"
+
+      if [ -f $DIRFULL ]
+        then
+         cat $DIRFULL | sed -re 's/,/\t|/g;' | column -t | less 
+      fi
+    done
+}
+
+# helper: search student's score
+# printscore scorefile ID
+printscore()
+{
+  if [ ! -z $1 -a -f $1 ]
+   then
+     SCORE=
+     readscore $1 $2
+     if [ ! -z "${SCORE}" ]
+       then
+         echo \($SCORE\)
+     fi
+  fi
+}
+
+# helper
+# readscore ID scorefile
+readscore()
+{
+  if [ ! -z $1 -a -f $1 ]
+    then
+     SCORE=$(grep ^$2 $1)
+  fi
+}
+
+# helper
+# startExp dir
+startExp()
+{
+  test -z "$1" || opt="--notebook-dir=$1"
+  jupyter notebook --allow-root "$opt" 
+}
+
+# for teacher
+mark()
+{
+  # chmod submit files for mark
+  for i in ${SUBMIT_DIR}/*
+    do
+      if [[ ${i##*/} =~ $STUDENT_PATTERN ]]
+        then
+          sudo chmod a+rx -R ${i}
+        fi
+    done
+  # read lab for checking
+  read -p "Input lab NUMBER for marking(1,2,3,...,etc.):" LAB
+
+  if [ ! -z $LAB ]
+  then
+
+    # print list of students
+    INDEX=1
+    SCOREFILE=${SCORE_DIR}/lab${LAB}
+
+    test -d "${SCORE_DIR}" || sudo mkdir ${SCORE_DIR}
+    test -f ${SCOREFILE} || sudo touch ${SCOREFILE}
+  
+    for DIR in ${SUBMIT_DIR}/*
+    do
+      if [[ ${DIR##*/} =~ $STUDENT_PATTERN ]] && [ -d ${DIR}/labs/lab${LAB} ]
+      then
+        SCORE=
+        echo -n "$INDEX  "
+        readscore $SCOREFILE ${DIR##*/}
+        if [ ! -z "${SCORE}" ]
+        then
+          echo $SCORE
+        else
+          echo "${DIR##*/}"
+        fi
+        INDEX=$(($INDEX+1))
+      fi
+    done
+  
+    SCORE=
+
+    # read start ID for checking
+    read -p "Input start student ID for checking:" ID
+
+    if [ ! -z $ID ]
+    then
+    # create exp and mount every student's submition
+      START=1
+      for DIR in ${SUBMIT_DIR}/*
+      do
+        if [ ! ${START} == 0 ]
+        then
+          if [ ${DIR##*/} == $ID ]
+          then
+            START=0
+          fi
+        fi
+        if [ ${START} == 0 ]
+        then
+          if [ -d ${DIR}/labs/lab${LAB} ]
+          then
+            echo "=============Checking student ${DIR##*/} ==============="
+
+            echo "Openning experiment environment, please wait ......"
+            startExp ${DIR}/labs/lab${LAB} ${DIR##*/}
+
+            # print score
+            printscore $SCOREFILE ${DIR##*/}
+            read -p "Mark ${DIR##*/} (enter:skip, q:quit, i:input id): " INPUT
+            if [ ! -z $INPUT ]
+            then
+              if [ ! $INPUT = "q" -a ! $INPUT = "Q" ]
+              then
+                if [ ! $INPUT = "i" -a ! $INPUT = "I" ]
+                then
+                  if grep -i ^${DIR##*/} ${SCOREFILE} >/dev/null 2>&1
+                  then
+                    echo "Marked, ignored"
+                  else
+                    sudo bash -c "echo ${DIR##*/},$INPUT,${USER},$(date) >> $SCOREFILE"
+                  fi
+                else
+                  # read start ID for checking
+                  read -p "Input start student ID for checking:" ID
+                  test -z $ID && break
+                  # create exp and mount every student's submition
+                  START=1
+                fi
+              else
+                break
+              fi
+            fi
+          fi
+        fi
+      done
+    fi
+  fi
 }
