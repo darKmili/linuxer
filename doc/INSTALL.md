@@ -14,6 +14,7 @@ pip3 install jupyter
 #### 3）安装bash kernel
 ```bash
 pip3 install bash_kernel
+
 python3 -m bash_kernel.install
 ```
 
@@ -81,8 +82,11 @@ git clone ssh://git@vlab.cs.swust.edu.cn:2222/linuxCourse/linux2019/linuxer.git
 
 ### 实验系统安装
 
-`cd linuxer`
-`make install`
+```bash
+cd linuxer
+
+make install
+```
 
 ### 客户端环境配置
 
@@ -96,15 +100,29 @@ apt install wput
 
 #### 1）增加帐号
 * 服务帐号linuxer
-`useradd -m -s /opt/linuxer/bin/server.bash linuxer`
+
+```bash
+useradd -m -s /opt/linuxer/bin/server.bash linuxer
+```
+
 * 教师帐号teacher
-`useradd -m -G sudo -s /opt/linuxer/bin/server-teachers.bash teacher`
+
+```bash
+useradd -m -G sudo -s /opt/linuxer/bin/server-teachers.bash teacher
+```
 
 #### 2）设置口令
 * 服务帐号linuxer
-`passwd linuxer`
+
+```bash
+passwd linuxer
+```
+
 * 教师帐号linuxer
-`passwd teacher`
+
+```bash
+passwd teacher
+```
 
 *注意:*需要记住这两个口令，客户端程序需要写入。
 
@@ -120,15 +138,18 @@ cp etc/sudoers.d/linuxer /etc/sudoers.d/
 
 etc/sudoers.d/linuxer文件用于配置sudo功能，实现授权特定用户以管理员身份执行某些命令，内容如下：
 
+```
 # Cmnd alias specification
 Cmnd_Alias LINUXER=/usr/bin/passwd, /usr/sbin/groupadd, /usr/sbin/userdel, /usr/sbin/useradd, /bin/mkdir, /bin/chown, /bin/chmod
 # User privilege specification
 linuxer ALL=(ALL) NOPASSWD: LINUXER
+```
 
 #### 4）安装vsftpd
 
 ```bash
 apt install vsftpd
+
 systemctl enable vsftpd.service
 ```
 
@@ -137,8 +158,9 @@ systemctl enable vsftpd.service
 `write_enable=YES`
 
 允许用户上传文件，在`/etc/shells`文件中添加下面内容：
-`
-    /opt/linuxer/bin/server.bash
-    /opt/linuxer/bin/server-students.bash
-    /opt/linuxer/bin/server-teachers.bash
-`
+
+```
+/opt/linuxer/bin/server.bash
+/opt/linuxer/bin/server-students.bash
+/opt/linuxer/bin/server-teachers.bash
+```
