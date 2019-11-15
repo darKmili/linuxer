@@ -89,7 +89,7 @@ checkscore()
         then
           read -p "$score"
         else
-          read -p "Your score has been not checked.Please wait."
+          read -p "Your score has not been checked.Please wait."
       fi
   fi
 }

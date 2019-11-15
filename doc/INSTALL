@@ -16,8 +16,10 @@ python3 -m bash_kernel.install
 2、在主服务器上安装，步骤为：
 1）增加注册帐号linuxer
 useradd -s /opt/linuxer/bin/server.bash linuxer
+useradd -G sudo -s /opt/linuxer/bin/server-teacher.bash teacher
 2）设置密码为linux
 passwd linuxer
+passwd teacher
 3）设置linuxer帐号可创建帐号
 拷贝etc/sudoers.d/linuxer文件到/etc/sudoers.d/目录中，内容如下：
 # Cmnd alias specification
