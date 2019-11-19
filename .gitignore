@@ -1,0 +1,9 @@
+_book/
+.ipynb_checkpoints/
+.~*
+labs*
+tutorials*
+docker*
+.images
+.docker
+.login
