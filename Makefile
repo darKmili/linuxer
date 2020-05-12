@@ -1,4 +1,4 @@
-all: test
+al: test
 
 install: etc/* lib/* bin/* score doc
 	test -d /opt/linuxer || mkdir /opt/linuxer 2>/dev/null

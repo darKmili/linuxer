@@ -24,7 +24,7 @@ case $CHOICE in
   1) passwd;;
   2) listscore;;
   3) mark;;
-  4) todo analyze;;
+  4) python3 run.py;;
   5) todo admin;;
   *) CHOICE=0
 esac
